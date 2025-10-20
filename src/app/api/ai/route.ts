@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { openrouter } from "@openrouter/ai-sdk-provider";
-import { generateText, tool } from "ai";
+import { generateText, streamText, tool } from "ai";
 import { z } from "zod";
 
-export async function GET(request: NextRequest) {
-  const result = await generateText({
+export async function POST(request: NextRequest) {
+  const result = streamText({
     model: openrouter.chat("openai/gpt-4o"),
     tools: {
-      github: tool({
+      profileAndUrls: tool({
         description:
-          "Esta ferramenta serve para buscar dados de um usuario no github",
+          "Esta ferramenta serve para buscar dados de um usuario no github ou acessar URLS da API para outras informações relacionadas ao github.",
         parameters: z.object({
           username: z.string().describe("Nome do usuario no github"),
         }),
@@ -22,11 +22,28 @@ export async function GET(request: NextRequest) {
           return JSON.stringify(data);
         },
       }),
+
+      organization: tool({
+        description:
+          "esta ferramenta serve para realizar requisição HTTP em uma URL fornecida e acessar sua resposta.",
+        parameters: z.object({
+          url: z.string().url().describe("URL a ser acessada"),
+        }),
+        execute: async ({ url }) => {
+          const response = await fetch(url);
+          const data = await response.text();
+
+          return JSON.stringify(data);
+        },
+      }),
     },
-    prompt: "Quantos repositórios publicos gustavojorgge possui no github?",
-    system:
-      "Você é um tradutor de textos, sempre retorne da maneira mais sucista possivel",
+    prompt: "Me dê a lista de usuários que o gustavojorgge segue no github?",
+    maxSteps: 5,
+
+    onStepFinish({ toolResults }) {
+      console.log(toolResults);
+    },
   });
 
-  return NextResponse.json({ message: result.text, parts: result.toolResults });
+  return result.toDataStreamResponse();
 }
