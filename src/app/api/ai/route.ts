@@ -4,6 +4,8 @@ import { generateText, streamText, tool } from "ai";
 import { z } from "zod";
 
 export async function POST(request: NextRequest) {
+  const { messages } = await request.json();
+
   const result = streamText({
     model: openrouter.chat("openai/gpt-4o"),
     tools: {
@@ -23,7 +25,7 @@ export async function POST(request: NextRequest) {
         },
       }),
 
-      organization: tool({
+      fetchHTTP: tool({
         description:
           "esta ferramenta serve para realizar requisição HTTP em uma URL fornecida e acessar sua resposta.",
         parameters: z.object({
@@ -33,12 +35,13 @@ export async function POST(request: NextRequest) {
           const response = await fetch(url);
           const data = await response.text();
 
-          return JSON.stringify(data);
+          return data;
         },
       }),
     },
-    prompt: "Me dê a lista de usuários que o gustavojorgge segue no github?",
+    messages,
     maxSteps: 5,
+    system: `Sempre responda em Markdown sem aspas no inicio ou fim da mensagem.`,
 
     onStepFinish({ toolResults }) {
       console.log(toolResults);

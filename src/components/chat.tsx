@@ -24,14 +24,15 @@ export function Chat() {
     }
   }, []);
 
-  // useEffect(() => {
-  //   if (messages.length > 0 && status === 'streaming' && containerRef.current) {
-  //     containerRef.current.scrollTo({
-  //       top: containerRef.current.scrollHeight,
-  //       behavior: "smooth",
-  //     });
-  //   }
-  // }, [messages, status]);
+  // Scroll durante o streaming
+  useEffect(() => {
+    if (messages.length > 0 && status === "streaming" && containerRef.current) {
+      containerRef.current.scrollTo({
+        top: containerRef.current.scrollHeight,
+        behavior: "smooth",
+      });
+    }
+  }, [messages, status]);
 
   return (
     <>
